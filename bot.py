@@ -22,8 +22,8 @@ os.makedirs("logs", exist_ok=True)
 logger.add(
     sink="logs/bot.log",
     format="{time:YYYY-MM-DD HH:mm:ss} | {level} | {name}:{file}:{line} {message}",
-    rotation="1 day",
-    retention="15 days",
+    rotation="10 days",
+    retention="90 days",
     compression="zip",
     backtrace=True,
     diagnose=True,
@@ -48,9 +48,8 @@ def register_all_handlers(dp):
 
 async def set_bot_commands(bot: Bot):
     commands = [
-        BotCommand(command="start", description="Start the bot"),
+        BotCommand(command="start", description="Start/Restart the bot"),
         BotCommand(command="help", description="Need help?"),
-        BotCommand(command="admin", description="Admin panel")
     ]
     await bot.set_my_commands(commands, scope=BotCommandScopeDefault())
 
