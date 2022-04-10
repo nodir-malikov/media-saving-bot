@@ -13,11 +13,12 @@ from tgbot.config import load_config
 from tgbot.filters.role import AdminFilter
 from tgbot.handlers.admin import register_admin
 from tgbot.handlers.user import register_user
+from tgbot.middlewares.db import DbMiddleware
 from tgbot.middlewares.throtling import ThrottlingMiddleware
 from tgbot.services.database import create_db_session
 
 
-os.makedirs("logs", exist_ok=True)
+os.makedirs(os.path.join(os.getcwd(), "logs"), exist_ok=True)
 
 logger.add(
     sink="logs/bot.log",
@@ -29,11 +30,38 @@ logger.add(
     diagnose=True,
     enqueue=True,
     catch=True,
+    level="INFO",
+)
+
+logger.add(
+    sink="logs/error.log",
+    format="{time:YYYY-MM-DD HH:mm:ss} | {level} | {name}:{file}:{line} {message}",
+    rotation="30 days",
+    retention="366 days",
+    compression="zip",
+    backtrace=True,
+    diagnose=True,
+    enqueue=True,
+    catch=True,
+    level="ERROR",
+)
+
+logger.add(
+    sink="logs/debug.log",
+    format="{time:YYYY-MM-DD HH:mm:ss} | {level} | {name}:{file}:{line} {message}",
+    rotation="30 days",
+    retention="366 days",
+    compression="zip",
+    backtrace=True,
+    diagnose=True,
+    enqueue=True,
+    catch=True,
     level="DEBUG",
 )
 
 
 def register_all_middlewares(dp):
+    dp.setup_middleware(DbMiddleware())
     dp.setup_middleware(ThrottlingMiddleware())
 
 
@@ -49,7 +77,6 @@ def register_all_handlers(dp):
 async def set_bot_commands(bot: Bot):
     commands = [
         BotCommand(command="start", description="Start/Restart the bot"),
-        BotCommand(command="help", description="Need help?"),
     ]
     await bot.set_my_commands(commands, scope=BotCommandScopeDefault())
 

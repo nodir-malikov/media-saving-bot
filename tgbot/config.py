@@ -24,9 +24,16 @@ class TgBot:
 
 
 @dataclass
+class Instagram:
+    username: str
+    password: str
+
+
+@dataclass
 class Config:
     tg_bot: TgBot
     db: DbConfig
+    instagram: Instagram
 
 
 def cast_bool(value: str) -> bool:
@@ -57,4 +64,5 @@ def load_config(path: str):
             redis_prefix=tg_bot.get("redis_prefix")
         ),
         db=DbConfig(**config["db"]),
+        instagram=Instagram(**config["instagram"]),
     )

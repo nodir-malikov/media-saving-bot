@@ -5,7 +5,7 @@ from aiogram import md
 from aiogram_broadcaster import MessageBroadcaster
 from aiogram import types
 
-from tgbot.models.users import User
+from tgbot.models.user import User
 
 
 async def get_mention(chat_id, full_name):
