@@ -96,7 +96,7 @@ class Instagram():
             logger.success("Login credentials (cookies) loaded from file")
             return cookies
 
-        os.makedirs(self.directory, exist_ok=True)
+        os.makedirs(self.directory, exist_ok=True, mode=0o755)
 
         cookies = await self.login()
         if cookies:
@@ -174,7 +174,7 @@ class Instagram():
                                     save_path = os.path.join(
                                         self.directory, "carousels", post_id)
                                     carousel_save_path = save_path
-                                    os.makedirs(save_path, exist_ok=True)
+                                    os.makedirs(save_path, exist_ok=True, mode=0o755)
                                     save_path = os.path.join(
                                         save_path, f"{index}.jpg")
 
@@ -194,7 +194,7 @@ class Instagram():
                                 if media["video"]:  # video
                                     save_path = os.path.join(
                                         self.directory, "carousels", post_id)
-                                    os.makedirs(save_path, exist_ok=True)
+                                    os.makedirs(save_path, exist_ok=True, mode=0o755)
                                     save_path = os.path.join(
                                         save_path, f"{index}.mp4")
 
@@ -218,7 +218,7 @@ class Instagram():
                             logger.info(f"Downloading video: {video_url}")
 
                             save_path = os.path.join(self.directory, "videos")
-                            os.makedirs(save_path, exist_ok=True)
+                            os.makedirs(save_path, exist_ok=True, mode=0o755)
                             save_path = os.path.join(
                                 save_path, f"{post_id}.mp4")
 
@@ -241,7 +241,7 @@ class Instagram():
                             logger.info(f"Downloading image: {image_url}")
 
                             save_path = os.path.join(self.directory, "images")
-                            os.makedirs(save_path, exist_ok=True)
+                            os.makedirs(save_path, exist_ok=True, mode=0o755)
                             save_path = os.path.join(
                                 save_path, f"{post_id}.jpg")
 
