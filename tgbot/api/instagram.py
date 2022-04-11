@@ -128,7 +128,7 @@ class Instagram():
                         logger.info(f"Post status: {resp.status}")
                         if resp.status == 404:
                             return CODES.NOT_FOUND.value
-                        logger.debug(f"Post data: {resp_json}")
+                        logger.debug(f"Post data: {await resp.text()}")
                         resp_json = json.loads(await resp.text())
                         logger.debug(
                             f"Post data:\n{json.dumps(resp_json, indent=4)}")
