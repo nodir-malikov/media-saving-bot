@@ -108,14 +108,14 @@ class Instagram():
         else:
             return None
 
-    async def download_post(self, url: str) -> int or tuple:
+    async def download_post(self, url: str, new_cookie=False) -> int or tuple:
         """Download post (image or video)"""
 
         post_id = re.search(
             r"instagram.com/[-a-zA-Z0-9]+/([^/]*)",
             url
         ).group(1)
-        cookies = await self.try_login()
+        cookies = await self.try_login(new_cookie=new_cookie)
 
         if cookies:
             try:
@@ -126,8 +126,8 @@ class Instagram():
                         if resp.status == 404:
                             return CODES.NOT_FOUND.value
                         resp_json = json.loads(await resp.text())
-                        # logger.debug(
-                        #     f"Post data:\n{json.dumps(resp_json, indent=4)}")
+                        logger.debug(
+                            f"Post data:\n{json.dumps(resp_json, indent=4)}")
                         carousel_media = jmespath.search(
                             "items[0].carousel_media", resp_json)
                         if not carousel_media:
@@ -262,17 +262,19 @@ class Instagram():
 
             except Exception as e:
                 logger.error(f"Error while downloading post: {e}")
-                raise e
-        else:
-            logger.error("Could not login")
-            # Retry login 3 times
-            if self.login_attempts < 3:
-                self.login_attempts += 1
-                logger.warning(
-                    f"Retrying login attempt: {self.login_attempts}")
-                await self.download_post(post_id)
-            self.login_attempts = 0
-            return CODES.COULD_NOT_LOGIN.value
+                if "Cannot connect to host" in str(e):
+                    logger.warning(
+                        "Cannot connect to host. Please check your internet connection.")
+
+        logger.error("Could not login")
+        # Retry login 3 times
+        if self.login_attempts < 3:
+            self.login_attempts += 1
+            logger.warning(
+                f"Retrying login attempt: {self.login_attempts}")
+            await self.download_post(url, new_cookie=True)
+        self.login_attempts = 0
+        return CODES.COULD_NOT_LOGIN.value
 
     async def download_story(self, url):
         """Downloads the story by given url"""

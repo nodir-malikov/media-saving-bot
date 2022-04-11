@@ -1,16 +1,21 @@
 [tg_bot]
-token = 123456789:AAAAAAAABBBBBBBBCCCCCC
-admin_id = 432699372, 365754117, 1669510422
+; @MediaSavingBot
+token = 7979797:ODJSACJASOCDJASDOJAS21
+admin_id = 432699372, 00000000
 use_redis = true
 redis_host = localhost
 redis_port = 6379
 redis_db = 0
 redis_password =
-redis_prefix = my_bot_fsm
+redis_prefix = media_saving_bot_fsm
 
 [db]
 user = postgres
 password = root
-database = my_bot_db
+database = media_saving_bot_db
 host = 127.0.0.1
 port = 5432
+
+[instagram]
+username = myaccount
+password = mypassword

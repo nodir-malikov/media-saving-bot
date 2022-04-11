@@ -153,10 +153,10 @@ async def user_downloader(m: Message, db_user: User):
         logger.info(f"User {m.from_user.id} url from Instagram")
         insta = Instagram(config.instagram.username, config.instagram.password)
         result = await insta.download_post(url)
-        if type(result) == int:
+        if type(result) in [int, None]:
             if result in [CODES.COULD_NOT_LOGIN.value, CODES.COULD_NOT_DOWNLOAD, CODES.ERROR.value]:
                 logger.error(f"User {m.from_user.id} could not download {url}.\n"
-                             "Error code: {result}")
+                             f"Error code: {result}")
                 await m.reply("Could not download. Please try again later.")
                 return
 
