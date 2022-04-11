@@ -53,6 +53,7 @@ class Instagram():
                 async with session.get("https://www.instagram.com/", headers=INSTA_HEADERS) as resp:
                     cookies = session.cookie_jar.filter_cookies(
                         "https://www.instagram.com")
+                    logger.debug(f"Cookies: {cookies}")
                     csrftoken = cookies["csrftoken"].value
                     # set a cookie that signals Instagram the "Accept cookie" banner was closed
                     ig_cb = SimpleCookie({"ig_cb": "2"})
