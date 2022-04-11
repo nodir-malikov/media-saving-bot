@@ -1,5 +1,6 @@
 import os
 
+from aiofiles import open as aioopen
 from aiogram import Dispatcher
 from aiogram.types import Message, MediaGroup, InputFile
 
@@ -31,14 +32,16 @@ class Sender(object):
 
     async def send_image_from_path(self, obj: Message, path: str, chat_id: int) -> str:
         caption = await self.gen_caption(obj.bot)
-        msg = await obj.bot.send_photo(chat_id, open(path, 'rb'), caption=caption)
-        # Return file's telegram id
-        return msg.photo[0].file_id
+        async with aioopen(path, 'rb') as f:
+            msg = await obj.bot.send_photo(chat_id, f, caption=caption)
+            # Return file's telegram id
+            return msg.photo[0].file_id
 
     async def send_video_from_path(self, obj: Message, path: str, chat_id: int) -> str:
         caption = await self.gen_caption(obj.bot)
-        msg = await obj.bot.send_video(chat_id, open(path, 'rb'), caption=caption)
-        return msg.video.file_id
+        async with aioopen(path, 'rb') as f:
+            msg = await obj.bot.send_video(chat_id, f, caption=caption)
+            return msg.video.file_id
 
     async def send_album_from_path(self, obj: Message, path: str, chat_id: int) -> str:
         caption = await self.gen_caption(obj.bot)
@@ -49,20 +52,21 @@ class Sender(object):
             if os.path.isfile(file_path):
                 file_type = f.split(".")[-1]
                 logger.debug(f"File: {file_path}")
-                if file_type in ["jpg", "jpeg", "png", "gif", "webp"]:
-                    if index == 0:
-                        media.attach_photo(
-                            InputFile(open(file_path, 'rb')), caption)
-                    else:
-                        media.attach_photo(
-                            InputFile(open(file_path, 'rb')))
-                elif file_type in ["mp4", "mov", "avi", "mkv"]:
-                    if index == 0:
-                        media.attach_video(
-                            InputFile(open(file_path, 'rb')), caption)
-                    else:
-                        media.attach_video(
-                            InputFile(open(file_path, 'rb')))
+                async with aioopen(file_path, 'rb') as f:
+                    if file_type in ["jpg", "jpeg", "png", "gif", "webp"]:
+                        if index == 0:
+                            media.attach_photo(
+                                InputFile(f), caption)
+                        else:
+                            media.attach_photo(
+                                InputFile(f))
+                    elif file_type in ["mp4", "mov", "avi", "mkv"]:
+                        if index == 0:
+                            media.attach_video(
+                                InputFile(f), caption)
+                        else:
+                            media.attach_video(
+                                InputFile(f))
         # Send as album
         msg = await obj.bot.send_media_group(chat_id, media)
         return await self.get_album_file_ids(msg)
@@ -197,6 +201,7 @@ async def user_downloader(m: Message, db_user: User):
                         await Link.add_link(db, link)
                     else:
                         raise
+                    logger.success(f"User {m.from_user.id} successfully sended {url}")
                     return
                 except Exception as e:
                     logger.warning(

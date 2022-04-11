@@ -2,6 +2,7 @@ import os
 import re
 import asyncio
 import datetime
+from textwrap import indent
 import aiohttp
 import jmespath
 import json
@@ -53,7 +54,6 @@ class Instagram():
                 async with session.get("https://www.instagram.com/", headers=INSTA_HEADERS) as resp:
                     cookies = session.cookie_jar.filter_cookies(
                         "https://www.instagram.com")
-                    logger.debug(f"Cookies: {cookies}")
                     csrftoken = cookies["csrftoken"].value
                     # set a cookie that signals Instagram the "Accept cookie" banner was closed
                     ig_cb = SimpleCookie({"ig_cb": "2"})
@@ -116,11 +116,13 @@ class Instagram():
             r"instagram.com/[-a-zA-Z0-9]+/([^/]*)",
             url
         ).group(1)
-        cookies = await self.try_login(new_cookie=new_cookie)
+        # cookies = await self.try_login(new_cookie=new_cookie)
 
-        if cookies:
+        # if cookies:
+        if True:
             try:
-                async with aiohttp.ClientSession(cookie_jar=cookies) as session:
+                # async with aiohttp.ClientSession(cookie_jar=cookies) as session:
+                async with aiohttp.ClientSession() as session:
                     # Get post data
                     async with session.get(url, headers=INSTA_HEADERS, params={"__a": "1"}) as resp:
                         logger.info(f"Post status: {resp.status}")
@@ -155,11 +157,17 @@ class Instagram():
                             if type(carousel_media) != list:
                                 # TODO: update this formula to download videos too
                                 formula = \
-                                    "edges[0:10].{image: node.display_url}"
+                                    "edges[0:10].{image: node.display_url, video: node.video_url}"
                                 carousel_media = jmespath.search(
                                     formula,
                                     carousel_media
                                 )
+                                # If has video pop image or pop video if video is None
+                                for item in carousel_media:
+                                    if item["video"]:
+                                        del item["image"]
+                                    if not item["video"]:
+                                        del item["video"]
 
                             else:
                                 formula = \
@@ -171,46 +179,49 @@ class Instagram():
 
                             carousel_save_path = ""
                             for index, media in enumerate(carousel_media):
-                                if not media["video"]:  # image
-                                    save_path = os.path.join(
-                                        self.directory, "carousels", post_id)
-                                    carousel_save_path = save_path
-                                    os.makedirs(save_path, exist_ok=True, mode=0o755)
-                                    save_path = os.path.join(
-                                        save_path, f"{index}.jpg")
+                                if type(media) == dict:
+                                    if not 'video' in media:  # image
+                                        save_path = os.path.join(
+                                            self.directory, "carousels", post_id)
+                                        carousel_save_path = save_path
+                                        os.makedirs(
+                                            save_path, exist_ok=True, mode=0o755)
+                                        save_path = os.path.join(
+                                            save_path, f"{index}.jpg")
 
-                                    image_url = media["image"]
-                                    async with session.get(image_url, headers=INSTA_HEADERS) as image:
-                                        if resp.status == 200:
-                                            image_data = await image.content.read()
-                                            with open(save_path, "wb") as f:
-                                                f.write(image_data)
-                                            logger.success(
-                                                f"Saved image to {save_path}")
-                                        else:
-                                            logger.error(
-                                                f"Error while downloading carousel image: {resp.status}")
-                                            return CODES.COULD_NOT_DOWNLOAD.value
+                                        image_url = media["image"]
+                                        async with session.get(image_url, headers=INSTA_HEADERS) as image:
+                                            if resp.status == 200:
+                                                image_data = await image.read()
+                                                with open(save_path, "wb") as f:
+                                                    f.write(image_data)
+                                                logger.success(
+                                                    f"Saved image to {save_path}")
+                                            else:
+                                                logger.error(
+                                                    f"Error while downloading carousel image: {resp.status}")
+                                                return CODES.COULD_NOT_DOWNLOAD.value
 
-                                if media["video"]:  # video
-                                    save_path = os.path.join(
-                                        self.directory, "carousels", post_id)
-                                    os.makedirs(save_path, exist_ok=True, mode=0o755)
-                                    save_path = os.path.join(
-                                        save_path, f"{index}.mp4")
+                                    if 'video' in media:  # video
+                                        save_path = os.path.join(
+                                            self.directory, "carousels", post_id)
+                                        os.makedirs(
+                                            save_path, exist_ok=True, mode=0o755)
+                                        save_path = os.path.join(
+                                            save_path, f"{index}.mp4")
 
-                                    video_url = media["video"]
-                                    async with session.get(video_url, headers=INSTA_HEADERS) as video:
-                                        if resp.status == 200:
-                                            video_data = await video.content.read()
-                                            with open(save_path, "wb") as f:
-                                                f.write(video_data)
-                                            logger.success(
-                                                f"Saved video to {save_path}")
-                                        else:
-                                            logger.error(
-                                                f"Error while downloading carousel video: {resp.status}")
-                                            return CODES.COULD_NOT_DOWNLOAD.value
+                                        video_url = media["video"]
+                                        async with session.get(video_url, headers=INSTA_HEADERS) as video:
+                                            if resp.status == 200:
+                                                video_data = await video.read()
+                                                with open(save_path, "wb") as f:
+                                                    f.write(video_data)
+                                                logger.success(
+                                                    f"Saved video to {save_path}")
+                                            else:
+                                                logger.error(
+                                                    f"Error while downloading carousel video: {resp.status}")
+                                                return CODES.COULD_NOT_DOWNLOAD.value
                             return CODES.DOWNLOADED.value, \
                                 {"path": carousel_save_path,
                                  "file_type": "carousel"}
@@ -225,7 +236,7 @@ class Instagram():
 
                             async with session.get(video_url, headers=INSTA_HEADERS) as video:
                                 if resp.status == 200:
-                                    video_data = await video.content.read()
+                                    video_data = await video.read()
                                     with open(save_path, "wb") as f:
                                         f.write(video_data)
                                     logger.success(
@@ -248,7 +259,7 @@ class Instagram():
 
                             async with session.get(image_url, headers=INSTA_HEADERS) as image:
                                 if resp.status == 200:
-                                    image_data = await image.content.read()
+                                    image_data = await image.read()
                                     with open(save_path, "wb") as f:
                                         f.write(image_data)
                                     logger.success(
@@ -266,15 +277,15 @@ class Instagram():
                 if "Cannot connect to host" in str(e):
                     logger.warning(
                         "Cannot connect to host. Please check your internet connection.")
+                raise e
 
         logger.error("Could not login")
-        # Retry login 3 times
-        if self.login_attempts < 3:
-            self.login_attempts += 1
-            logger.warning(
-                f"Retrying login attempt: {self.login_attempts}")
-            await self.download_post(url, new_cookie=True)
-        self.login_attempts = 0
+        # if self.login_attempts < 3:
+        #     self.login_attempts += 1
+        #     logger.warning(
+        #         f"Retrying login attempt: {self.login_attempts}")
+        #     await self.download_post(url, new_cookie=True)
+        # self.login_attempts = 0
         return CODES.COULD_NOT_LOGIN.value
 
     async def download_story(self, url):
