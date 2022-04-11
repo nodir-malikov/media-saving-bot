@@ -85,10 +85,10 @@ class Instagram():
 
     async def try_login(self, new_cookie=False):
         """Try to login to Instagram, with saved cookies or login if otherwise"""
-        if new_cookie:
-            os.remove(os.path.join(self.directory, "cookies.txt"))
 
         if os.path.exists(os.path.join(self.directory, "cookies.txt")):
+            if new_cookie:
+                os.remove(os.path.join(self.directory, "cookies.txt"))
             cookies = aiohttp.cookiejar.CookieJar(
                 loop=asyncio.get_event_loop())
             with open(os.path.join(self.directory, "cookies.txt"), "r") as f:
