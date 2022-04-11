@@ -129,6 +129,7 @@ class Instagram():
                         if resp.status == 404:
                             return CODES.NOT_FOUND.value
                         resp_json = json.loads(await resp.text())
+                        logger.debug(f"Post data: {resp_json}")
                         logger.debug(
                             f"Post data:\n{json.dumps(resp_json, indent=4)}")
                         carousel_media = jmespath.search(
