@@ -81,7 +81,7 @@ class Instagram():
                         return None
         except Exception as e:
             logger.error(f"Error while logging in:\n{e}")
-            return None
+            raise e
 
     async def try_login(self, new_cookie=False):
         """Try to login to Instagram, with saved cookies or login if otherwise"""
