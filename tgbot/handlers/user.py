@@ -99,7 +99,8 @@ class Sender(object):
 async def user_start(m: Message):
     logger.info(f"User {m.from_user.id} pressed /start")
     await m.reply(
-        "Hello! Send me a link to the image or video and I will download it for you!\n"
+        "Hello! This is a MVP version of this bot.\n"
+        "Send me a link to the image or video and I will download it for you!\n"
         "Supported social media:\n"
         "\t○ Instagram")
 
