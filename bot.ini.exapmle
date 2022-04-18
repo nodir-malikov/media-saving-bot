@@ -1,6 +1,7 @@
 [tg_bot]
 ; @MediaSavingBot
 token = 7979797:ODJSACJASOCDJASDOJAS21
+bot_api_server = http://0.0.0.0:8888
 admin_id = 432699372, 00000000
 use_redis = true
 redis_host = localhost

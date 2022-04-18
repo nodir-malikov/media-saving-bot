@@ -4,6 +4,7 @@ import os
 from loguru import logger
 
 from aiogram import Bot, Dispatcher
+from aiogram.bot.api import TelegramAPIServer, TELEGRAM_PRODUCTION
 from aiogram.contrib.fsm_storage.memory import MemoryStorage
 from aiogram.contrib.fsm_storage.redis import RedisStorage2
 from aiogram.types import BotCommand
@@ -94,7 +95,13 @@ async def main():
     else:
         storage = MemoryStorage()
 
-    bot = Bot(token=config.tg_bot.token, parse_mode="HTML")
+    server = TELEGRAM_PRODUCTION
+    if config.tg_bot.bot_api_server:
+        server = TelegramAPIServer.from_base(
+            base=config.tg_bot.bot_api_server,
+        )
+
+    bot = Bot(token=config.tg_bot.token, parse_mode="HTML", server=server)
     dp = Dispatcher(bot, storage=storage)
 
     bot['config'] = config

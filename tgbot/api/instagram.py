@@ -156,7 +156,6 @@ class Instagram():
 
                         if carousel_media:
                             if type(carousel_media) != list:
-                                # TODO: update this formula to download videos too
                                 formula = \
                                     "edges[0:10].{image: node.display_url, video: node.video_url}"
                                 carousel_media = jmespath.search(

@@ -14,6 +14,7 @@ class DbConfig:
 @dataclass
 class TgBot:
     token: str
+    bot_api_server: str
     admin_id: list
     use_redis: bool
     redis_host: str
@@ -55,6 +56,7 @@ def load_config(path: str):
     return Config(
         tg_bot=TgBot(
             token=tg_bot["token"],
+            bot_api_server=tg_bot["bot_api_server"],
             admin_id=cast_str_list(tg_bot["admin_id"]),
             use_redis=cast_bool(tg_bot.get("use_redis")),
             redis_host=tg_bot.get("redis_host"),

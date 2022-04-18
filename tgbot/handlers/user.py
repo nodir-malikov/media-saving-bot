@@ -1,18 +1,27 @@
 import os
 
+import jmespath
+
 from aiofiles import open as aioopen
 from aiogram import Dispatcher
-from aiogram.types import Message, MediaGroup, InputFile
+from aiogram.types import (CallbackQuery, Message, MediaGroup,
+                           InputFile, InputMediaVideo, InputMediaPhoto, InputMediaAudio)
 
 from loguru import logger
 
 from tgbot.config import Config
 from tgbot.api.instagram import Instagram, CODES
+from tgbot.api.youtube import (
+    youtube_video_download, youtube_audio_download,
+    get_main_data, save_thumbnail, get_thumbnail)
 from tgbot.models.user import User
 from tgbot.models.link import Link
 from tgbot.models.file import File
+from tgbot.keyboards.inline import UserInline
 from tgbot.misc.utils import (
-    SPP_SM_BASE_URLS, is_url, is_allowed_social_media, clean_url
+    SPP_SM_BASE_URLS, is_url,
+    is_allowed_social_media, clean_url,
+    show_format_sizes
 )
 
 
@@ -106,7 +115,8 @@ async def user_start(m: Message):
         "Hello! This is a MVP version of this bot.\n"
         "Send me a link to the image or video and I will download it for you!\n"
         "Supported social media:\n"
-        "\t○ Instagram")
+        "    ○ Instagram\n"
+        "    ○ Youtube\n")
 
 
 async def user_downloader(m: Message, db_user: User):
@@ -124,7 +134,7 @@ async def user_downloader(m: Message, db_user: User):
         await m.reply("This url is not in supported social media!")
         return
 
-    text = "Downloading..."
+    text = "Preparing..."
     is_already_downloaded = await Link.get_link(db, await clean_url(url))
     if is_already_downloaded:
         logger.info(
@@ -158,7 +168,9 @@ async def user_downloader(m: Message, db_user: User):
         insta = Instagram(config.instagram.username, config.instagram.password)
         result = await insta.download_post(url)
         if type(result) in [int, None]:
-            if result in [CODES.COULD_NOT_LOGIN.value, CODES.COULD_NOT_DOWNLOAD, CODES.ERROR.value]:
+            if result in [CODES.COULD_NOT_LOGIN.value,
+                          CODES.COULD_NOT_DOWNLOAD,
+                          CODES.ERROR.value]:
                 logger.error(f"User {m.from_user.id} could not download {url}.\n"
                              f"Error code: {result}")
                 await m.reply("Could not download. Please try again later.")
@@ -201,13 +213,79 @@ async def user_downloader(m: Message, db_user: User):
                         await Link.add_link(db, link)
                     else:
                         raise
-                    logger.success(f"User {m.from_user.id} successfully sended {url}")
+                    logger.success(
+                        f"User {m.from_user.id} successfully sended {url}")
                     return
                 except Exception as e:
                     logger.warning(
                         f"User {m.from_user.id} could not upload {result['path']}.")
                     await m.reply("Something went wrong. Please try again later.")
                     raise e
+
+    elif social_media in (SPP_SM_BASE_URLS.YOUTUBE.value,
+                          SPP_SM_BASE_URLS.YOUTUBE_SHORT.value):
+        main_data = await get_main_data(url)
+        thumb = InputFile(await save_thumbnail(main_data['id'], main_data['thumbnail']))
+        sizes = await show_format_sizes(main_data['video_formats'])
+        text = \
+            f"📹 <b>{main_data['title']}</b> <a href=\"{url}\">→</a>\n"\
+            f"📺 #{main_data['channel'].replace(' ', '_')} "\
+            f"<a href=\"{main_data['channel_url']}\">→</a>\n\n"\
+            f"{sizes}"\
+            "\n\n<b>Choose type and quality ↓</b>\n"
+        markup = await UserInline.generate_download_options(
+            video_id=main_data['id'],
+            duration=main_data['duration'],
+            video_formats=main_data['video_formats'],
+            audio_formats=main_data['audio_formats']
+        )
+        await m.answer_photo(thumb, text, reply_markup=markup)
+
+
+async def yt_callback_download(cb: CallbackQuery, callback_data: dict):
+    logger.info(f"User {cb.from_user.id} selected download option")
+    await cb.answer()
+    # old_text = cb.message.text if cb.message.text else ""
+    # await cb.message.edit_text(old_text + "\n\n⬇️ Downloading...")
+    await cb.message.edit_reply_markup(reply_markup='')
+    type = callback_data['type']
+    video_id = callback_data['video_id']
+    format_id = callback_data['format_id']
+    width = callback_data['width']
+    height = callback_data['height']
+    duration = callback_data['duration']
+    url = f"https://youtu.be/{video_id}"
+    thumb = await get_thumbnail(video_id)
+    logger.debug(f"User {cb.from_user.id} selected {callback_data}")
+
+    if type == 'video':
+        logger.info(f"User {cb.from_user.id} selected video download")
+        result = await youtube_video_download(video_id, format_id, height, url)
+        logger.success(
+            f"User {cb.from_user.id} downloaded {url}, now sending...")
+        await cb.message.answer_video(
+            InputFile(result),
+            duration=duration,
+            thumb=thumb,
+            caption="@MediaSavingBot",
+            width=width,
+            height=height,
+            supports_streaming=True
+        )
+
+    elif type == 'audio':
+        logger.info(f"User {cb.from_user.id} selected audio download")
+        result = await youtube_audio_download(video_id, format_id, url)
+        logger.success(
+            f"User {cb.from_user.id} downloaded {url}, now sending...")
+        await cb.message.answer_audio(
+            InputFile(result),
+            duration=duration,
+            thumb=thumb,
+            caption="@MediaSavingBot",
+            performer="@MediaSavingBot",
+            title="@MediaSavingBot"
+        )
 
 
 def register_user(dp: Dispatcher):
@@ -219,5 +297,10 @@ def register_user(dp: Dispatcher):
     dp.register_message_handler(
         user_downloader,
         content_types=["text"],
+        state="*"
+    )
+    dp.register_callback_query_handler(
+        yt_callback_download,
+        UserInline.cd_down_options.filter(),
         state="*"
     )

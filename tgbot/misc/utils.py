@@ -1,5 +1,10 @@
-from enum import Enum
+import os
+import base64
+import zlib
 import validators
+
+from enum import Enum
+
 from loguru import logger
 
 
@@ -10,8 +15,8 @@ UNIVERSAL_UA = \
 
 class SPP_SM_BASE_URLS(Enum):
     INSTAGRAM = "instagram.com"
-    # YOUTUBE = "youtube.com"
-    # YOUTUBE_SHORT = "youtu.be"
+    YOUTUBE = "youtube.com"
+    YOUTUBE_SHORT = "youtu.be"
     # TIKTOK = "tiktok.com"
 
 
@@ -42,3 +47,53 @@ async def is_allowed_social_media(url: str) -> str or None:
         if sm.value in url:
             return sm.value
     return False
+
+
+async def humanbytes(num, suffix='B'):
+    if num is None:
+        num = 0
+    else:
+        num = int(num)
+
+    for unit in ['', 'K', 'M', 'G', 'T', 'P', 'E', 'Z']:
+        if abs(num) < 1024.0:
+            return "%3.1f%s%s" % (num, unit, suffix)
+        num /= 1024.0
+    return "%.1f%s%s" % (num, 'Yi', suffix)
+
+
+async def show_format_sizes(video_formats: list) -> str:
+    """Show video formats sizes"""
+    sizes = []
+    for format in video_formats:
+        height = format['height']
+        filesize = format['filesize']
+        # add ✅ before strings
+        # if filesize is greater than 2GB add 🛑 before strings
+        if filesize > 2147483648:  # 2GB
+            sizes.append(f"<code>🛑\t{height}p:\t{await humanbytes(filesize)}</code>")
+        else:
+            sizes.append(f"<code>✅\t{height}p:\t{await humanbytes(filesize)}</code>")
+    return "\n".join(sizes)
+
+
+async def compress_string(string: str) -> str:
+    """Compress string"""
+    return base64.b64encode(zlib.compress(string.encode())).decode()
+
+
+async def decompress_string(string: str) -> str:
+    """Decompress string"""
+    return zlib.decompress(base64.b64decode(string)).decode()
+
+
+async def delete_file(filepath: str) -> bool:
+    """
+    Delete thumbnail from filepath
+    """
+    try:
+        os.remove(filepath)
+        return True
+    except Exception as e:
+        logger.error(e)
+        return False
