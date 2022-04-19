@@ -2,7 +2,7 @@ import os
 import asyncio
 import aiohttp
 import jmespath
-import youtube_dl
+import yt_dlp
 
 from aiofiles import open as aioopen
 
@@ -34,7 +34,7 @@ async def get_main_data(video_url: str) -> dict:
     """
     Get main data from youtube url
     """
-    ydl = youtube_dl.YoutubeDL()
+    ydl = yt_dlp.YoutubeDL()
     with ydl:
         r = ydl.extract_info(video_url, download=False)
         data = jmespath.search(jmesformula, r)
