@@ -68,7 +68,7 @@ async def get_thumbnail(video_id: str):
 async def youtube_video_download(id: str, format_id: str, height: str, url: str):
     filepath = os.path.join(ytvideospath, f"{id}_{format_id}_{height}.mp4")
     video_command = [
-        "youtube-dl",
+        "yt-dlp",
         "-c",
         "--embed-subs",
         "-f", f"{format_id}+bestaudio",
@@ -92,7 +92,7 @@ async def youtube_video_download(id: str, format_id: str, height: str, url: str)
 async def youtube_audio_download(id: str, format_id: str, url: str):
     filepath = os.path.join(ytauidospath, f"{id}_{format_id}.mp3")
     audio_command = [
-        "youtube-dl",
+        "yt-dlp",
         "-c",
         "--prefer-ffmpeg",
         "--extract-audio",

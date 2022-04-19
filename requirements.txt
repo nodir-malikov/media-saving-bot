@@ -13,6 +13,7 @@ attrs==21.4.0
 autopep8==1.6.0
 Babel==2.9.1
 beautifulsoup4==4.10.0
+Brotli==1.0.9
 bs4==0.0.1
 cachetools==4.2.2
 certifi==2021.10.8
@@ -41,12 +42,14 @@ jsonschema==2.6.0
 loguru==0.6.0
 MeaningCloud-python==2.0.0
 multidict==6.0.2
+mutagen==1.45.1
 outcome==1.1.0
 plyer==2.0.0
 protobuf==3.20.0
 psycopg2==2.9.3
 pycodestyle==2.8.0
 pycparser==2.21
+pycryptodomex==3.14.1
 pyOpenSSL==22.0.0
 PySocks==1.7.1
 python-slugify==6.1.1
@@ -76,9 +79,10 @@ tzlocal==4.2
 urllib3==1.26.9
 validators==0.18.2
 webdriverdownloader==1.1.0.3
+websockets==10.3
 win32-setctime==1.1.0
 wsproto==1.1.0
 yarl==1.7.2
-youtube-dl==2021.12.17
+yt-dlp==2022.4.8
 zope.event==4.5.0
 zope.interface==5.4.0
