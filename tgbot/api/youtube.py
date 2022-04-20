@@ -67,38 +67,42 @@ async def get_thumbnail(video_id: str):
 
 async def youtube_video_download(id: str, format_id: str, height: str, url: str):
     filepath = os.path.join(ytvideospath, f"{id}_{format_id}_{height}.mp4")
+    if os.path.exists(filepath):
+        return filepath
     video_command = [
         "yt-dlp",
         "-c",
-        "--embed-subs",
+        "--keep-video",
+        "--recode-video", 'mp4',
         "-f", f"{format_id}+bestaudio",
         "-o", filepath,
         "--hls-prefer-ffmpeg", url]
     process = await asyncio.create_subprocess_exec(
         *video_command,
-        # stdout must a pipe to be accessible as process.stdout
         stdout=asyncio.subprocess.PIPE,
-        stderr=asyncio.subprocess.PIPE
-    )
+        stderr=asyncio.subprocess.PIPE)
     stdout, stderr = await process.communicate()
     e_response = stderr.decode().strip()
     t_response = stdout.decode().strip()
     logger.debug(f"YTDL Response: {e_response}")
-    filename = t_response.split("Merging formats into")[-1].split('"')[1]
+    logger.debug(f"YTDL Response 2: {t_response}")
+    filename = t_response.split("; Destination: ")[-1]
     logger.debug(f"Downloaded video: {filename}")
     return filename
 
 
 async def youtube_audio_download(id: str, format_id: str, url: str):
     filepath = os.path.join(ytauidospath, f"{id}_{format_id}.mp3")
+    if os.path.exists(filepath):
+        return filepath
     audio_command = [
         "yt-dlp",
         "-c",
-        "--prefer-ffmpeg",
         "--extract-audio",
+        "--prefer-ffmpeg",
         "--audio-format", "mp3",
-        "--audio-quality", format_id,
-        "-o", filepath, url]
+        "-o", filepath,
+        url]
     process = await asyncio.create_subprocess_exec(
         *audio_command,
         # stdout must a pipe to be accessible as process.stdout
@@ -109,6 +113,8 @@ async def youtube_audio_download(id: str, format_id: str, url: str):
     e_response = stderr.decode().strip()
     t_response = stdout.decode().strip()
     logger.debug(f"YTDL Response: {e_response}")
-    filename = t_response.split("Merging formats into")[-1].split('"')[1]
+    logger.debug(f"YTDL Response 2: {t_response}")
+    filename = \
+        t_response.split("[ExtractAudio] Destination: ")[-1].split('\n')[0]
     logger.debug(f"Downloaded audio: {filename}")
     return filename
